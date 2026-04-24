@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=1280">
+    <title>VATROC | 中華民國虛擬航管組織</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { 
+            background-image: url('TP.png'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            font-family: 'Inter', sans-serif; 
+            color: #f8fafc; 
+            min-height: 100vh; 
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(15, 23, 42, 0.4); 
+            z-index: -1;
+        }
+
+        .glass-card { 
+            background: rgba(15, 23, 42, 0.3); 
+            backdrop-filter: blur(8px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 16px; 
+        }
+        
+        .text-shadow-sm {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        th { background: rgba(0, 0, 0, 0.3); }
+
+        .vatroc-logo {
+            height: 90px;
+            width: auto;
+            object-fit: contain;
+        }
+        .custom-scroll::-webkit-scrollbar { height: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <nav class="flex justify-between items-center mb-10 max-w-7xl mx-auto relative z-10">
+        <div class="flex items-center gap-3">
+            <img src="VATROC.png" alt="VATROC Logo" class="vatroc-logo">
+        </div>
+        <div class="hidden md:flex gap-8 text-sm font-medium text-white text-shadow-sm items-center">
+            <a href="index.html" class="underline decoration-blue-500 underline-offset-8 decoration-2">Main Page</a>
+            <a href="staff.html" class="hover:text-blue-300 transition-colors">ATC center</a>
+            <a href="https://ais.caa.gov.tw/eaip/" target="_blank" class="hover:text-blue-300">Pilot resources</a>
+            <a href="joinatc.html" class="hover:text-blue-300 transition-colors">ATC training / Visiting</a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto space-y-6 relative z-10">
+        
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-black tracking-tighter text-white text-shadow-sm">Welcome to VATROC control center</h1>
+                <p id="update-tag" class="text-xs text-blue-200 font-mono tracking-widest mt-1 text-shadow-sm">FETCHING VATSIM DATA...</p>
+            </div>
+            
+            <div class="flex flex-wrap gap-4">
+                <div class="glass-card px-5 py-3 text-center min-w-[100px]">
+                    <span class="text-[10px] text-slate-300 block uppercase font-bold">Controllers</span>
+                    <span id="atc-count" class="text-2xl font-bold text-blue-400 font-mono">0</span>
+                </div>
+                <div class="glass-card px-5 py-3 text-center min-w-[100px] border-t-4 border-t-orange-500">
+                    <span class="text-[10px] text-slate-300 block uppercase font-bold text-orange-400">Total Deps</span>
+                    <span id="dep-count" class="text-2xl font-bold text-white font-mono">0</span>
+                </div>
+                <div class="glass-card px-5 py-3 text-center min-w-[100px] border-t-4 border-t-emerald-500">
+                    <span class="text-[10px] text-slate-300 block uppercase font-bold text-emerald-400">Total Arrs</span>
+                    <span id="arr-count" class="text-2xl font-bold text-white font-mono">0</span>
+                </div>
+                <div class="glass-card px-5 py-3 text-center min-w-[100px] border-t-4 border-t-blue-500">
+                    <span class="text-[10px] text-slate-300 block uppercase font-bold text-blue-400">RCTP ATIS</span>
+                    <span id="atis-RCTP" class="text-2xl font-bold text-white font-mono">-</span>
+                </div>
+                <div class="glass-card px-5 py-3 text-center min-w-[100px] border-t-4 border-t-blue-500">
+                    <span class="text-[10px] text-slate-300 block uppercase font-bold text-blue-400">RCKH ATIS</span>
+                    <span id="atis-RCKH" class="text-2xl font-bold text-white font-mono">-</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <section class="glass-card p-6">
+                <h3 class="text-xs font-bold text-blue-300 uppercase tracking-widest mb-4">Online ATC</h3>
+                <div id="atc-container" class="space-y-3"></div>
+            </section>
+
+            <section class="lg:col-span-2 glass-card p-6">
+                <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-4">Airport METAR</h3>
+                <div id="metar-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </section>
+        </div>
+
+        <section class="glass-card overflow-hidden">
+            <div class="p-4 border-b border-white/10 bg-black/20">
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-widest">Taiwan Major Airports Flight Board</h3>
+            </div>
+            <div class="overflow-x-auto custom-scroll">
+                <table class="w-full text-left table-fixed border-collapse">
+                    <thead class="text-[11px] text-slate-300 uppercase font-bold">
+                        <tr>
+                            <th class="p-4 w-[20%]">Callsign</th>
+                            <th class="p-4 w-[20%] text-center">Aircraft</th>
+                            <th class="p-4 w-[30%] text-center">Route</th>
+                            <th class="p-4 w-[15%] text-left">Alt / GS</th>
+                            <th class="p-4 w-[15%] text-right">ETA (Z)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="flight-table-body" class="divide-y divide-white/5 font-medium"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const API_URL = 'https://data.vatsim.net/v3/vatsim-data.json';
+        const ATIS_API = 'https://data.vatsim.net/v3/afv-atis-data.json';
+        const METAR_API = 'https://metar.vatsim.net/metar.php?id=';
+        
+        const AIRPORTS = ['RCTP', 'RCKH', 'RCSS', 'RCFN', 'RCMQ'];
+        const ATC_PREFIXES = ['RCTP', 'RCSS', 'RCKH', 'RCFN', 'RCMQ', 'TPE_'];
+        const ATIS_TARGETS = ['RCTP', 'RCKH'];
+
+        // 席位呼號名稱對照表
+        const ATC_NAMES = {
+            'RCTP_APP': 'Taipei Approach',
+            'RCTP_O_APP': 'Taipei Approach (OJT)',
+            'RCTP_N_APP': 'Taipei Approach (North)',
+            'RCTP_S_APP': 'Taipei Approach (South)',
+            'RCTP_A_APP': 'Taipei Approach (Final)',
+            'RCTP_W_APP': 'Taipei Approach (Songshan West)',
+            'RCTP_E_APP': 'Taipei Approach (Songshan East)',
+            'RCTP_M_APP': 'Tapei Approach (Taichung)',
+            'RCTP_Y_APP': 'Taipei Approach (Hualien)',
+            'RCTP_F_APP': 'Taipei Approach (Matsu)',
+            'RCTP_O_TWR': 'Taipei Tower (OJT)',
+            'RCTP_TWR': 'Taipei Tower',
+            'RCTP_O_GND': 'Taipei Ground (OJT)',
+            'RCTP_N_GND': 'Taipei Ground (North)',
+            'RCTP_S_GND': 'Taipei Ground (South)',
+            'RCTP_DEL': 'Taipei Delivery',
+            'RCKH_K_APP': 'Kaohsiung Approach (Kaohsiung TMA)',
+            'RCKH_U_APP': 'Kaohsiung Approach (Chiayi TMA)',
+            'RCKH_N_APP': 'Kaohsiung Approach (Tainan TMA)',
+            'RCKH_B_APP': 'Kaohsiung Approach (Kinmen TMA)',
+            'RCKH_TWR': 'Kaohsiung Tower',
+            'RCKH_GND': 'Kaohsiung Ground',
+            'RCKH_DEL': 'Kaohsiung Delivery',
+            'RCSS_TWR': 'Songshan Tower',
+            'TPE_W_CTR': 'Taipei Control (West)',
+            'TPE_E_CTR': 'Taipei Control (East)',
+            'TPE_N_CTR': 'Taipei Control ',
+            'TPE_S_CTR': 'Taipei Control ',
+            'TPE_L_CTR': 'Taipei Control '
+        };
+
+        async function updateData() {
+            try {
+                const [res, atisRes] = await Promise.all([
+                    fetch(API_URL),
+                    fetch(ATIS_API)
+                ]);
+                
+                const data = await res.json();
+                const atisData = await atisRes.json();
+
+                // 1. Controller List 與名稱判定
+                const controllers = data.controllers.filter(c => ATC_PREFIXES.some(p => c.callsign.startsWith(p)));
+                document.getElementById('atc-container').innerHTML = controllers.map(atc => {
+                    const displayName = ATC_NAMES[atc.callsign.toUpperCase()] || atc.callsign;
+                    return `
+                        <div class="bg-black/40 p-3 rounded-lg border border-white/5 flex flex-col gap-1">
+                            <div class="flex justify-between items-center">
+                                <span class="font-mono text-blue-400 font-bold text-sm">${atc.callsign}</span>
+                                <span class="font-mono text-white text-xs">${atc.frequency}</span>
+                            </div>
+                            <span class="text-[9px] text-slate-400 uppercase tracking-wider">${displayName}</span>
+                        </div>
+                    `;
+                }).join('') || '<p class="text-slate-500 text-sm">Currently no ATC online</p>';
+                document.getElementById('atc-count').innerText = controllers.length;
+
+                // 2. ATIS Logic (修正後的抓取邏輯)
+                ATIS_TARGETS.forEach(icao => {
+                    const atis = atisData.find(a => a.callsign === `${icao}_ATIS`);
+                    const element = document.getElementById(`atis-${icao}`);
+                    
+                    if (atis) {
+                        let code = atis.atis_code;
+                        // 備案：如果 code 欄位是空的，從文字內容解析 (例如：INFO C)
+                        if (!code && atis.text_atis && atis.text_atis.length > 0) {
+                            const match = atis.text_atis[0].match(/INFO\s([A-Z])/i);
+                            if (match) code = match[1].toUpperCase();
+                        }
+                        element.innerText = code || "?";
+                        element.className = "text-2xl font-bold text-blue-400 font-mono";
+                    } else {
+                        element.innerText = "OFF";
+                        element.className = "text-2xl font-bold text-slate-500 font-mono";
+                    }
+                });
+
+                // 3. Flight Board
+                let dep = 0, arr = 0;
+                let regionalPilots = data.pilots.filter(p => {
+                    if(!p.flight_plan) return false;
+                    const isDep = AIRPORTS.includes(p.flight_plan.departure);
+                    const isArr = AIRPORTS.includes(p.flight_plan.arrival);
+                    if(isDep) dep++;
+                    if(isArr) arr++;
+                    return isDep || isArr;
+                });
+
+                document.getElementById('dep-count').innerText = dep;
+                document.getElementById('arr-count').innerText = arr;
+
+                document.getElementById('flight-table-body').innerHTML = regionalPilots.map(p => {
+                    let eta = "--:--";
+                    if(p.flight_plan.deptime && p.flight_plan.enroute_time){
+                        let h = (parseInt(p.flight_plan.deptime.slice(0,2)) + parseInt(p.flight_plan.enroute_time.slice(0,2))) % 24;
+                        let m = (parseInt(p.flight_plan.deptime.slice(2,4)) + parseInt(p.flight_plan.enroute_time.slice(2,4))) % 60;
+                        eta = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+                    }
+                    return `
+                        <tr class="hover:bg-white/5 transition-colors text-sm">
+                            <td class="p-4 font-bold text-blue-400">${p.callsign}</td>
+                            <td class="p-4 text-center text-slate-300">${p.flight_plan.aircraft_short}</td>
+                            <td class="p-4 text-center font-mono text-xs whitespace-nowrap">
+                                <span class="${AIRPORTS.includes(p.flight_plan.departure) ? 'text-orange-400' : 'text-slate-400'}">${p.flight_plan.departure}</span> → 
+                                <span class="${AIRPORTS.includes(p.flight_plan.arrival) ? 'text-emerald-400' : 'text-slate-400'}">${p.flight_plan.arrival}</span>
+                            </td>
+                            <td class="p-4 font-mono text-xs text-slate-300 pl-4 whitespace-nowrap">${p.altitude} / ${p.groundspeed}</td>
+                            <td class="p-4 text-right font-mono text-blue-300">${eta}</td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="5" class="p-10 text-center text-slate-600">No active regional flights</td></tr>';
+
+                document.getElementById('update-tag').innerText = `LAST UPDATE: ${new Date().toLocaleTimeString()}`;
+            } catch(e) { console.error("Data update failed:", e); }
+        }
+
+        async function updateMetars() {
+            const list = document.getElementById('metar-list');
+            list.innerHTML = AIRPORTS.map(icao => `
+                <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                    <div class="text-blue-400 font-bold text-xs mb-1">${icao}</div>
+                    <div id="metar-${icao}" class="text-[10px] font-mono text-emerald-400 leading-tight italic">Loading...</div>
+                </div>
+            `).join('');
+            for(const icao of AIRPORTS){
+                try {
+                    const res = await fetch(METAR_API + icao);
+                    const text = await res.text();
+                    document.getElementById('metar-' + icao).innerText = text.trim() || 'N/A';
+                } catch (e) { document.getElementById('metar-' + icao).innerText = 'ERROR'; }
+            }
+        }
+
+        updateData(); updateMetars();
+        setInterval(updateData, 30000); 
+        setInterval(updateMetars, 300000);
+    </script>
+</body>
+</html>
