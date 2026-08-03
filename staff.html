@@ -63,7 +63,7 @@
     </main>
 
     <script>
-        const GOOGLE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQHAreEebnMznd65GIyzJner2QBguCsMxK72sxxaOo2YBHj93zKCvvyrwSpo4ALDqpn-oL_6sE1xBo/pub?gid=0&single=true&output=csv";
+        const GOOGLE_CSV_URL = "https://docs.google.com/spreadsheets/d/1_BSJfJoLN2mFBcL97pmq-YonTJKL8QFwdqMut-gWRW4/edit?usp=sharing";
         const VATSIM_API = "https://data.vatsim.net/v3/vatsim-data.json";
         const categories = ["CTR", "APP", "TWR", "GND", "DEL"];
 
@@ -84,7 +84,7 @@
                 tableBody.innerHTML = '';
 
                 categories.forEach(cat => {
-                    const filtered = rows.filter(r => r.length >= 4 && r[3].toUpperCase().includes(cat));
+                    const filtered = rows.filter(r => r.length >= 5 && r[3].toUpperCase().includes(cat));
                     if (filtered.length > 0) {
                         tableBody.innerHTML += `<tr class="section-header"><td colspan="5" class="p-3 text-xs font-bold text-slate-200 uppercase tracking-widest pl-4">${cat} </td></tr>`;
                         filtered.forEach(r => {
